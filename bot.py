@@ -22,19 +22,20 @@ CHANNEL_LINKS = {
     "anual":      "https://t.me/+LINK_ANUAL",
 }
 
-PAYMENT_INFO = """💳 *Métodos de pago:*
-
-• Bizum: `612 345 678`
-• PayPal: `tupaypal@email.com`
-• Crypto (USDT/BTC): consulta al admin
-
-📩 Envía el comprobante a """ + SUPPORT_USER
+PAYMENT_INFO = (
+    "Puedes realizar el pago mediante los siguientes métodos:\n\n"
+    "· Bizum: 612 345 678\n"
+    "· PayPal: tupaypal@email.com\n"
+    "· Crypto (USDT/BTC): consulta con soporte\n\n"
+    "Una vez realizado el pago, envía el comprobante a " + SUPPORT_USER + ".\n"
+    "Tu acceso será activado en menos de 24 horas."
+)
 
 PLANES = {
-    "mensual":    {"precio": 149,  "nombre": "Mensual",    "dias": 30,  "emoji": "🥉"},
-    "trimestral": {"precio": 399,  "nombre": "Trimestral", "dias": 90,  "emoji": "🥈"},
-    "semestral":  {"precio": 799,  "nombre": "Semestral",  "dias": 180, "emoji": "🥇"},
-    "anual":      {"precio": 1499, "nombre": "Anual",      "dias": 365, "emoji": "💎"},
+    "mensual":    {"precio": 149,  "nombre": "Suscripción Mensual",    "dias": 30,  "periodo": "1 mes"},
+    "trimestral": {"precio": 399,  "nombre": "Suscripción Trimestral", "dias": 90,  "periodo": "3 meses"},
+    "semestral":  {"precio": 799,  "nombre": "Suscripción Semestral",  "dias": 180, "periodo": "6 meses"},
+    "anual":      {"precio": 1499, "nombre": "Suscripción Anual",      "dias": 365, "periodo": "1 año"},
 }
 
 CUPONES = {
@@ -77,8 +78,8 @@ logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s", level=lo
 pendientes = {}
 
 MENU_TECLADO = ReplyKeyboardMarkup(
-    [[KeyboardButton("📋 Planes y Precios"), KeyboardButton("📊 Mi Suscripción")],
-     [KeyboardButton("💬 Soporte"),          KeyboardButton("🏠 Inicio")]],
+    [[KeyboardButton("Planes y precios"), KeyboardButton("Mi suscripción")],
+     [KeyboardButton("Soporte"),          KeyboardButton("Inicio")]],
     resize_keyboard=True
 )
 
@@ -89,56 +90,62 @@ def precio_con_descuento(precio, cupon):
 def estado_suscripcion_texto(user_id):
     sub = get_suscripcion(user_id)
     if not sub:
-        return "❌ No tienes ninguna suscripción activa."
+        return "No tienes ninguna suscripción activa en este momento."
+
     fin = datetime.fromisoformat(sub["fin"])
     ahora = datetime.now()
     if ahora > fin:
-        return "⚠️ Tu suscripción ha *expirado*."
+        return "Tu suscripción ha expirado.\n\nPuedes renovarla seleccionando un plan a continuación."
+
     restante = fin - ahora
     dias = restante.days
     horas = restante.seconds // 3600
     plan = PLANES[sub["plan"]]["nombre"]
-    inicio_str = datetime.fromisoformat(sub["inicio"]).strftime("%d/%m/%Y")
-    fin_str = fin.strftime("%d/%m/%Y")
-    usado = 1 - restante.total_seconds() / timedelta(days=PLANES[sub["plan"]]["dias"]).total_seconds()
-    barra = min(int(usado * 10), 10)
-    barra_txt = "🟩" * (10 - barra) + "⬜" * barra
+    fin_str = fin.strftime("%d/%m/%Y, %H:%M")
+
     return (
-        f"✅ *Suscripción activa — {plan}*\n\n"
-        f"📅 Inicio: {inicio_str}\n"
-        f"📅 Vence:  {fin_str}\n\n"
-        f"⏳ Tiempo restante: *{dias} días y {horas}h*\n"
-        f"{barra_txt}"
+        f"Plan: *{plan}*\n"
+        f"Tu membresía es válida hasta: {fin_str}\n"
+        f"(*{dias} días y {horas} horas* restantes)"
     )
 
+
+# ── /start ────────────────────────────────────
 async def start(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     nombre = update.effective_user.first_name
     texto = (
-        f"👋 ¡Hola, *{nombre}*! Bienvenido a *AC Premium Signals* 📈\n\n"
-        "Aquí puedes:\n"
-        "• 💰 Comprar una suscripción premium\n"
-        "• 📊 Ver el estado de tu membresía\n"
-        "• 🔗 Acceder al canal de señales\n\n"
-        "Si eres nuevo, usa el cupón *NEW20* para obtener un *20% de descuento* 🍀\n\n"
-        "Usa el menú de abajo o elige una opción:"
+        f"Hola, {nombre}.\n\n"
+        "Bienvenido al bot de suscripciones de *AC Premium Signals*.\n\n"
+        "Desde aquí puedes adquirir tu suscripción, consultar el estado "
+        "de tu membresía y unirte al canal premium.\n\n"
+        "Si eres nuevo, puedes usar el código *NEW20* para obtener un "
+        "20% de descuento en cualquier plan.\n\n"
+        "Si tienes alguna consulta, escríbenos directamente a "
+        f"{SUPPORT_USER}. Estamos disponibles.\n\n"
+        "Selecciona una opción:"
     )
     teclado_inline = InlineKeyboardMarkup([
-        [InlineKeyboardButton("💎 Ver Planes y Precios", callback_data="ver_precios")],
-        [InlineKeyboardButton("📊 Mi Suscripción",       callback_data="mi_suscripcion")],
-        [InlineKeyboardButton("💬 Contactar Soporte",    callback_data="soporte")],
+        [InlineKeyboardButton("Planes y precios", callback_data="ver_precios")],
+        [InlineKeyboardButton("Mi suscripción",   callback_data="mi_suscripcion")],
+        [InlineKeyboardButton("Soporte",          callback_data="soporte")],
     ])
     await update.message.reply_text(texto, parse_mode="Markdown", reply_markup=MENU_TECLADO)
-    await update.message.reply_text("¿Qué quieres hacer?", reply_markup=teclado_inline)
+    await update.message.reply_text("¿Qué deseas hacer?", reply_markup=teclado_inline)
 
+
+# ── Precios ───────────────────────────────────
 def _precios_contenido():
-    texto = "💎 *Planes AC Premium Signals*\n\n"
-    for key, p in PLANES.items():
-        texto += f"{p['emoji']} *{p['nombre']}* — *{p['precio']}€*\n"
-    texto += f"\n🍀 Usa el código *NEW20* al contratar y obtén un *20% de descuento*"
+    texto = (
+        "*AC Premium Signals — Planes de suscripción*\n\n"
+        "Al adquirir cualquier plan recibirás acceso inmediato al canal "
+        "premium con señales diarias de alta precisión.\n\n"
+        "Usa el código *NEW20* al contratar para obtener un 20% de descuento.\n\n"
+        "Selecciona un plan para continuar:"
+    )
     botones = []
     for key, p in PLANES.items():
         botones.append([InlineKeyboardButton(
-            f"{p['emoji']} {p['nombre']} — {p['precio']}€",
+            f"{p['nombre']}: {p['precio']}€ / {p['periodo']}",
             callback_data=f"contratar_{key}"
         )])
     return texto, InlineKeyboardMarkup(botones)
@@ -153,21 +160,25 @@ async def ver_precios_cb(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     texto, teclado = _precios_contenido()
     await query.message.reply_text(texto, parse_mode="Markdown", reply_markup=teclado)
 
+
+# ── Mi suscripción ────────────────────────────
 async def mi_suscripcion_msg(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     texto = estado_suscripcion_texto(update.effective_user.id)
-    botones = InlineKeyboardMarkup([[InlineKeyboardButton("💎 Ver Planes", callback_data="ver_precios")]])
+    botones = InlineKeyboardMarkup([[InlineKeyboardButton("Ver planes", callback_data="ver_precios")]])
     await update.message.reply_text(texto, parse_mode="Markdown", reply_markup=botones)
 
 async def mi_suscripcion_cb(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     texto = estado_suscripcion_texto(query.from_user.id)
-    botones = InlineKeyboardMarkup([[InlineKeyboardButton("💎 Ver Planes", callback_data="ver_precios")]])
+    botones = InlineKeyboardMarkup([[InlineKeyboardButton("Ver planes", callback_data="ver_precios")]])
     await query.message.reply_text(texto, parse_mode="Markdown", reply_markup=botones)
 
+
+# ── Soporte ───────────────────────────────────
 async def soporte_msg(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(
-        f"💬 *Soporte AC Premium*\n\nEscríbenos directamente:\n👉 {SUPPORT_USER}\n\nEstamos disponibles 24/7 ✅",
+        f"Para cualquier consulta, escríbenos directamente a *{SUPPORT_USER}*.\n\nEstamos disponibles.",
         parse_mode="Markdown"
     )
 
@@ -175,10 +186,12 @@ async def soporte_cb(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
     await query.message.reply_text(
-        f"💬 *Soporte AC Premium*\n\nEscríbenos directamente:\n👉 {SUPPORT_USER}\n\nEstamos disponibles 24/7 ✅",
+        f"Para cualquier consulta, escríbenos directamente a *{SUPPORT_USER}*.\n\nEstamos disponibles.",
         parse_mode="Markdown"
     )
 
+
+# ── Contratar ─────────────────────────────────
 async def contratar(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -187,27 +200,40 @@ async def contratar(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     pendientes[user_id] = {"plan": plan, "cupon": None}
     p = PLANES[plan]
     texto = (
-        f"{p['emoji']} *Plan seleccionado: {p['nombre']} — {p['precio']}€*\n\n"
-        "¿Tienes un cupón de descuento?\n"
-        "Escríbelo ahora o pulsa *Sin cupón* para continuar:"
+        f"*{p['nombre']}*\n"
+        f"{p['precio']}€ por {p['periodo']}\n\n"
+        "¿Dispones de un código de descuento?\n"
+        "Escríbelo ahora o selecciona continuar sin código."
     )
     botones = InlineKeyboardMarkup([
-        [InlineKeyboardButton("➡️ Continuar sin cupón", callback_data=f"pago_{plan}_nocupon")],
-        [InlineKeyboardButton("🔙 Ver otros planes",    callback_data="ver_precios")],
+        [InlineKeyboardButton("Tengo un código de descuento", callback_data=f"tiene_cupon_{plan}")],
+        [InlineKeyboardButton("Continuar sin código",         callback_data=f"pago_{plan}_nocupon")],
+        [InlineKeyboardButton("Volver a los planes",          callback_data="ver_precios")],
     ])
     await query.message.reply_text(texto, parse_mode="Markdown", reply_markup=botones)
 
+async def tiene_cupon(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    plan = query.data.replace("tiene_cupon_", "")
+    pendientes[query.from_user.id] = {"plan": plan, "cupon": None}
+    await query.message.reply_text("Escribe tu código de descuento:")
+
+
+# ── Texto libre ───────────────────────────────
 async def mensaje_texto(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
     texto = update.message.text.strip()
-    if texto == "📋 Planes y Precios":
+
+    if texto == "Planes y precios":
         return await ver_precios_msg(update, ctx)
-    if texto == "📊 Mi Suscripción":
+    if texto == "Mi suscripción":
         return await mi_suscripcion_msg(update, ctx)
-    if texto == "💬 Soporte":
+    if texto == "Soporte":
         return await soporte_msg(update, ctx)
-    if texto == "🏠 Inicio":
+    if texto == "Inicio":
         return await start(update, ctx)
+
     if user_id in pendientes and pendientes[user_id].get("cupon") is None:
         plan = pendientes[user_id]["plan"]
         cupon = texto.upper()
@@ -216,21 +242,23 @@ async def mensaje_texto(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
             precio_orig = PLANES[plan]["precio"]
             precio_final, pct = precio_con_descuento(precio_orig, cupon)
             await update.message.reply_text(
-                f"✅ *¡Cupón {cupon} aplicado!* -{pct}% de descuento\n\n"
-                f"~~{precio_orig}€~~ → *{precio_final}€*",
+                f"Código *{cupon}* aplicado correctamente. -{pct}% de descuento.\n\n"
+                f"Precio final: *{precio_final}€*",
                 parse_mode="Markdown",
                 reply_markup=InlineKeyboardMarkup([
-                    [InlineKeyboardButton("💳 Ir a pagar", callback_data=f"pago_{plan}_{cupon}")]
+                    [InlineKeyboardButton("Continuar con el pago", callback_data=f"pago_{plan}_{cupon}")]
                 ])
             )
         else:
             await update.message.reply_text(
-                "❌ Cupón no válido. Inténtalo de nuevo o continúa sin cupón.",
+                "El código introducido no es válido. Inténtalo de nuevo o continúa sin código.",
                 reply_markup=InlineKeyboardMarkup([
-                    [InlineKeyboardButton("➡️ Continuar sin cupón", callback_data=f"pago_{plan}_nocupon")]
+                    [InlineKeyboardButton("Continuar sin código", callback_data=f"pago_{plan}_nocupon")]
                 ])
             )
 
+
+# ── Mostrar pago ──────────────────────────────
 async def mostrar_pago(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
     await query.answer()
@@ -243,34 +271,35 @@ async def mostrar_pago(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     linea_cupon = ""
     if cupon and cupon in CUPONES:
         precio_final, pct = precio_con_descuento(p["precio"], cupon)
-        linea_cupon = f"🍀 Cupón *{cupon}*: -{pct}% aplicado\n"
+        linea_cupon = f"Código {cupon} aplicado: -{pct}%\n"
     pendientes[user_id] = {"plan": plan, "cupon": cupon}
     texto = (
-        f"🛒 *Resumen de tu pedido*\n\n"
-        f"{p['emoji']} Plan: *{p['nombre']}*\n"
+        f"*Resumen del pedido*\n\n"
+        f"Plan: {p['nombre']}\n"
         f"{linea_cupon}"
-        f"💰 Total: *{precio_final}€*\n\n"
-        f"{PAYMENT_INFO}\n\n"
-        "Una vez enviado el comprobante, *confirmaremos tu acceso en menos de 24h* ✅"
+        f"Total: *{precio_final}€*\n\n"
+        f"{PAYMENT_INFO}"
     )
     await query.message.reply_text(texto, parse_mode="Markdown",
         reply_markup=InlineKeyboardMarkup([
-            [InlineKeyboardButton("💬 Contactar Soporte", callback_data="soporte")],
-            [InlineKeyboardButton("🔙 Ver Planes", callback_data="ver_precios")],
+            [InlineKeyboardButton("Contactar soporte", callback_data="soporte")],
+            [InlineKeyboardButton("Volver a los planes", callback_data="ver_precios")],
         ]))
     await ctx.bot.send_message(
         ADMIN_ID,
-        f"🔔 *Nuevo interesado en pagar*\n"
-        f"👤 [{query.from_user.first_name}](tg://user?id={user_id}) — ID: `{user_id}`\n"
-        f"📦 Plan: *{p['nombre']}* — {precio_final}€"
-        + (f" (cupón {cupon})" if cupon else "") +
-        f"\n\n▶️ Para aprobar: `/aprobar {user_id}`",
+        f"Nuevo interesado en pagar\n\n"
+        f"Usuario: [{query.from_user.first_name}](tg://user?id={user_id}) — ID: `{user_id}`\n"
+        f"Plan: {p['nombre']} — {precio_final}€"
+        + (f" (código {cupon})" if cupon else "") +
+        f"\n\nPara aprobar: `/aprobar {user_id}`",
         parse_mode="Markdown"
     )
 
+
+# ── /aprobar ──────────────────────────────────
 async def aprobar(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID:
-        await update.message.reply_text("❌ Sin permisos.")
+        await update.message.reply_text("Sin permisos.")
         return
     if not ctx.args:
         await update.message.reply_text("Uso: `/aprobar USER_ID`", parse_mode="Markdown")
@@ -283,44 +312,54 @@ async def aprobar(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     fin = (datetime.now() + timedelta(days=dias)).strftime("%d/%m/%Y")
     await ctx.bot.send_message(
         user_id,
-        f"✅ *¡Pago confirmado! Bienvenido a AC Premium* 🎉\n\n"
-        f"📦 Plan: *{PLANES[plan]['nombre']}*\n"
-        f"📅 Tu acceso vence el: *{fin}*\n\n"
-        f"🔗 *Tu link de acceso exclusivo:*\n{link}\n\n"
-        f"⚠️ Este link es personal, no lo compartas.\n"
-        f"Cualquier duda: {SUPPORT_USER} 🚀",
+        f"Hola,\n\n"
+        f"Tu pago ha sido confirmado. Bienvenido a *AC Premium Signals*.\n\n"
+        f"Plan contratado: *{PLANES[plan]['nombre']}*\n"
+        f"Tu acceso vence el: *{fin}*\n\n"
+        f"Enlace de acceso al canal:\n{link}\n\n"
+        f"Este enlace es personal. Por favor, no lo compartas.\n\n"
+        f"Para cualquier consulta, escríbenos a {SUPPORT_USER}.",
         parse_mode="Markdown"
     )
-    await update.message.reply_text(f"✅ Aprobado. Plan *{plan}* hasta {fin}.", parse_mode="Markdown")
+    await update.message.reply_text(
+        f"Acceso activado para `{user_id}` — {plan} hasta {fin}.",
+        parse_mode="Markdown"
+    )
     pendientes.pop(user_id, None)
 
+
+# ── /pendientes ───────────────────────────────
 async def ver_pendientes(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID:
         return
     if not pendientes:
         await update.message.reply_text("No hay usuarios pendientes.")
         return
-    texto = "📋 *Pendientes:*\n\n"
+    texto = "*Pendientes de aprobación:*\n\n"
     for uid, datos in pendientes.items():
-        texto += f"• `{uid}` — *{datos['plan']}*\n"
+        texto += f"· `{uid}` — {datos['plan']}\n"
     await update.message.reply_text(texto, parse_mode="Markdown")
 
+
+# ── /suscripciones ────────────────────────────
 async def ver_suscripciones(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID:
         return
     db = cargar_db()
     if not db:
-        await update.message.reply_text("No hay suscripciones.")
+        await update.message.reply_text("No hay suscripciones registradas.")
         return
     ahora = datetime.now()
-    texto = "📊 *Suscripciones:*\n\n"
+    texto = "*Suscripciones activas:*\n\n"
     for uid, sub in db.items():
         fin = datetime.fromisoformat(sub["fin"])
-        estado = "✅" if fin > ahora else "❌"
+        estado = "Activa" if fin > ahora else "Expirada"
         dias_rest = max((fin - ahora).days, 0)
-        texto += f"{estado} `{uid}` — *{sub['plan']}* — {dias_rest}d\n"
+        texto += f"· `{uid}` — {sub['plan']} — {estado} — {dias_rest}d restantes\n"
     await update.message.reply_text(texto, parse_mode="Markdown")
 
+
+# ── Main ──────────────────────────────────────
 def main():
     app = Application.builder().token(BOT_TOKEN).build()
     app.add_handler(CommandHandler("start",         start))
@@ -331,9 +370,10 @@ def main():
     app.add_handler(CallbackQueryHandler(mi_suscripcion_cb, pattern="^mi_suscripcion$"))
     app.add_handler(CallbackQueryHandler(soporte_cb,        pattern="^soporte$"))
     app.add_handler(CallbackQueryHandler(contratar,         pattern="^contratar_"))
+    app.add_handler(CallbackQueryHandler(tiene_cupon,       pattern="^tiene_cupon_"))
     app.add_handler(CallbackQueryHandler(mostrar_pago,      pattern="^pago_"))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, mensaje_texto))
-    print("🤖 AC Premium Bot arrancado...")
+    print("AC Premium Bot arrancado.")
     app.run_polling(drop_pending_updates=True)
 
 if __name__ == "__main__":
