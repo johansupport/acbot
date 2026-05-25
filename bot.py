@@ -127,6 +127,7 @@ async def start(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         [InlineKeyboardButton("Planes y precios", callback_data="ver_precios")],
         [InlineKeyboardButton("Mi suscripción",   callback_data="mi_suscripcion")],
         [InlineKeyboardButton("Soporte",          callback_data="soporte")],
+        [InlineKeyboardButton("Estadísticas",     callback_data="estadisticas")],
     ])
     await update.message.reply_text(texto, parse_mode="Markdown", reply_markup=MENU_TECLADO)
     await update.message.reply_text("¿Qué deseas hacer?", reply_markup=teclado_inline)
@@ -337,6 +338,20 @@ async def mensaje_texto(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
             )
 
 
+# ── Estadísticas ─────────────────────────────
+async def estadisticas_cb(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
+    query = update.callback_query
+    await query.answer()
+    await query.message.reply_text("Enviando reporte de resultados...")
+    with open("document_pdf.pdf", "rb") as f:
+        await ctx.bot.send_document(
+            chat_id=query.from_user.id,
+            document=f,
+            filename="AC_Premium_Resultados_2026.pdf",
+            caption="Reporte de resultados AC Premium Signals · BTC/USD · Enero – Mayo 2026"
+        )
+
+
 # ── /aprobar ──────────────────────────────────
 async def aprobar(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
     if update.effective_user.id != ADMIN_ID:
@@ -410,6 +425,7 @@ def main():
     app.add_handler(CallbackQueryHandler(ver_precios_cb,    pattern="^ver_precios$"))
     app.add_handler(CallbackQueryHandler(mi_suscripcion_cb, pattern="^mi_suscripcion$"))
     app.add_handler(CallbackQueryHandler(soporte_cb,        pattern="^soporte$"))
+    app.add_handler(CallbackQueryHandler(estadisticas_cb,  pattern="^estadisticas$"))
     app.add_handler(CallbackQueryHandler(contratar,         pattern="^contratar_"))
     app.add_handler(CallbackQueryHandler(tiene_cupon,       pattern="^tiene_cupon_"))
     app.add_handler(CallbackQueryHandler(elegir_pago,       pattern="^elegir_pago_"))
