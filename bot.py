@@ -24,12 +24,12 @@ CHANNEL_LINKS = {
 
 # Direcciones de pago — edita con las tuyas
 CRYPTO_ADDRESSES = {
-    "BTC":        "bc1qxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-    "ETH":        "0xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-    "USDT ERC20": "0xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
-    "USDT TRC20": "Txxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+    "BTC":        "12Sjcp9nP3QTeoApVsaXBfVmcXoWVQbTXv",
+    "ETH":        "0x5728e223dbd22c8577e4eeae7b3f79ec901c9a49",
+    "USDT ERC20": "0x5728e223dbd22c8577e4eeae7b3f79ec901c9a49",
+    "USDT TRC20": "TRuY9nS7Q3xVUB7DaGHBwzchwsEt2eSrtY",
 }
-WISE_INFO = "Correo Wise: tupaypal@email.com\nNombre: Tu Nombre"
+WISE_INFO = "Account Name: Andrés Cestona\nIBAN: BE17 9056 8810 0021\nSWIFT/BIC: TRWIBEB1XXX"
 
 PLANES = {
     "mensual":    {"precio": 149,  "nombre": "1 Month Subscription",  "dias": 30,  "periodo": "1 mes"},
@@ -116,7 +116,7 @@ async def start(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         "con análisis técnico en tiempo real para BTC y los principales activos del mercado.\n\n"
         "Al suscribirte obtendrás acceso a:\n"
         "· Canal de señales diarias de BTC\n"
-        "· Canal Swing Trading\n"
+        "· Canal AC Swing Signals\n"
         "· Alertas de entrada y salida\n"
         "· Soporte directo con el equipo\n\n"
         "Si eres nuevo, puedes usar el código *NEW20* para obtener un 20% de descuento en cualquier plan.\n\n"
@@ -197,7 +197,7 @@ async def contratar(update: Update, ctx: ContextTypes.DEFAULT_TYPE):
         f"${p['precio']}.00 por {p['periodo']}\n\n"
         "Al completar este pedido obtendrás acceso a:\n"
         "· Canal AC Premium Signals (señales diarias de BTC)\n"
-        "· Canal Swing Trading\n"
+        "· Canal AC Swing Signals\n"
         "· Alertas de entrada y salida\n"
         "· Soporte directo con el equipo\n\n"
         "¿Dispones de un código de descuento?"
